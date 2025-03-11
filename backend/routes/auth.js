@@ -34,29 +34,38 @@ router.post("/signup", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 });
-// ✅ Signin Route
+// ✅ Signin Route (Fixed)
 router.post("/signin", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     // Check if user exists
     const user = await User.findOne({ email });
-    if (!user)
+    if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
+    }
 
     // Compare Password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+    if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
+    }
 
     // Generate JWT Token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
-    res.status(200).json({ message: "Login successful", token });
+    // ✅ Include `name` in the response
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      name: user.name, // ✅ Fix: Send the user's name
+      email: user.email, // ✅ Also send email
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Signin Error:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 });
 
